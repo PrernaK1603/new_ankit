@@ -1,0 +1,115 @@
+var gulp = require("gulp");
+var fs = require("fs");
+var cheerio = require("gulp-cheerio");
+var jsonHtml = JSON.parse(fs.readFileSync("./config/config.json"));
+
+var dom = require("jsdom");
+const { JSDOM } = dom;
+
+/*gulp.task("copy-html", function(done) {
+  var HTMLContentList = [];
+  //var HTMLSubContentList = [];
+  for (var i = 0; i < HtmlInputArray.length; i++) {
+    dom.JSDOM.fromFile(HtmlInputArray[i].path).then(
+      function(config, htmlContentList, d) {
+        htmlContentList.push(
+          d.window.document.querySelector(config.extractFrom).innerHTML
+        );
+      }.bind(undefined, HtmlInputArray[i], HTMLContentList)
+    );
+  }
+  dom.JSDOM.fromFile(output)
+    .then(
+      function(htmlContentList, d) {
+        d.window.document.querySelector(
+          "body"
+        ).innerHTML += htmlContentList.join("\n");
+        saveOutput(d.serialize(d.window.document.documentElement.innerHTML));
+      }.bind(undefined, HTMLContentList)
+    )
+    .then(done);
+});
+
+function saveOutput(data) {
+  fs.writeFile(output, data, function(error) {
+    if (error) {
+      throw error;
+    }
+    console.log("Copied portion to output successfully.");
+  });
+}
+
+gulp.task("include-css-js", function(done) {
+  return gulp
+    .src("src/index.html")
+    .pipe(
+      cheerio(function($) {
+        $("head").append(
+          '<script src="../src/components/header/header.js"></script>'
+        );
+        $("head").append(
+          '<link rel="stylesheet" href="../src/components/body/body.css">'
+        );
+        $("head").append(
+          '<link rel="stylesheet" href="../src/components/header/header.css">'
+        );
+        $("head").append(
+          '<link rel="stylesheet" href="../src/components/footer/footer.css">'
+        );
+      })
+    )
+    .pipe(gulp.dest("dest"));
+});
+
+gulp.task("html", function() {
+  return gulp
+    .src([
+      "src/components/header/header.html",
+      "src/components/body/body.html",
+      "src/components/footer/footer.html"
+    ])
+    .pipe(concat("index.html"))
+    .pipe(gulp.dest("result"));
+});
+*/
+
+function htmlTask(done) {
+  var HTMLContentList = {};
+  for (let i = 0; i < jsonHtml.htmlInputArray.length; i++) {
+    dom.JSDOM.fromFile(
+      jsonHtml.htmlInputArray[i].srcDir + jsonHtml.htmlInputArray[i].srcHtml
+    ).then(
+      function (config, htmlContentList, d) {
+        htmlContentList[i] = d.window.document.querySelector(config.extractFrom).innerHTML ;
+      }.bind(undefined, jsonHtml.htmlInputArray[i], HTMLContentList)
+    );
+  }
+  dom.JSDOM.fromFile(jsonHtml.htmlInputArray[0].tempHtmlDir)
+    .then(
+      function (htmlContentList, d) {
+        var myContent = ""
+        var len = Object.keys(htmlContentList).length;
+        for(var key = 0 ; key < len;key++){
+          myContent += htmlContentList[key];
+          console.log({key,len})
+        };
+        d.window.document.querySelector(
+          "body"
+        ).innerHTML += myContent;
+        saveOutput(d.serialize(d.window.document.documentElement.innerHTML));
+      }.bind(undefined, HTMLContentList)
+    )
+    .then(done);
+}
+
+function saveOutput(data) {
+  fs.writeFile(jsonHtml.htmlInputArray[0].tempHtmlDir, data, function (error) {
+    if (error) {
+      throw error;
+    }
+    console.log("Copied portion to output successfully.");
+  });
+}
+
+const htmlTasks = gulp.series(htmlTask);
+exports.htmlTasks = htmlTasks;
